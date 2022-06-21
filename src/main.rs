@@ -1,95 +1,84 @@
 use macroquad::prelude::*;
-use macroquad::rand;
+use macroquad::window;
 
-struct Ball {
-    xkord: f32,
-    ykord: f32,
-    radius: f32,
-    color: Color,
-    speed: f32,
+const GRID_CELLS: i16 = 32;
+
+struct Cell {
+    x: i16,
+    y: i16,
 }
 
-#[macroquad::main("Müllmann")]
-async fn main() {
-    let mut ballplayer = Ball {
-        xkord: screen_width() / 2.0,
-        ykord: screen_height() / 2.0,
-        radius: 10.0,
-        color: BLACK,
-        speed: 10.0,
-    };
+struct Muell {
+    x: i16,
+    y: i16,
+    size: i16,
+    shown: bool,
+}
 
-    let mut balls: Vec<Ball> = Vec::new();
-    let mut gameover = false;
+struct Bewohner {
+    x: i16,
+    y: i16,
+    size: i16,
+    speed: i16,
+}
 
-    balls.push(Ball {
-        xkord: 50.0,
-        ykord: 50.0,
-        radius: 10.0,
-        color: RED,
-        speed: ((rand::rand() % 5) as f32) + 1.0 * 2.0,
-    });
-
-    balls.push(Ball {
-        xkord: 150.0,
-        ykord: 150.0,
-        radius: 10.0,
-        color: BEIGE,
-        speed: ((rand::rand() % 5) as f32) + 1.0 * 2.0,
-    });
-
-    balls.push(Ball {
-        xkord: 450.0,
-        ykord: 450.0,
-        radius: 10.0,
-        color: YELLOW,
-        speed: ((rand::rand() % 5) as f32) + 1.0 * 2.0,
-    });
-
-    loop {
-        if gameover {
-            break;
-        }
-        clear_background(BLUE);
-
-        if is_key_down(KeyCode::Right) && !(ballplayer.xkord + ballplayer.radius > screen_width()) {
-            ballplayer.xkord += ballplayer.speed;
-        }
-        if is_key_down(KeyCode::Left) && !(ballplayer.xkord - ballplayer.radius < 0.0) {
-            ballplayer.xkord -= ballplayer.speed;
-        }
-        if is_key_down(KeyCode::Up) && !(ballplayer.ykord - ballplayer.radius < 0.0) {
-            ballplayer.ykord -= ballplayer.speed;
-        }
-        if is_key_down(KeyCode::Down) && !(ballplayer.ykord + ballplayer.radius > screen_height()) {
-            ballplayer.ykord += ballplayer.speed;
-        }
-        if is_key_down(KeyCode::N) && ballplayer.radius > 10.0 {
-            ballplayer.radius -= 1.0;
-        }
-        if is_key_down(KeyCode::M) {
-            ballplayer.radius += 1.0;
-        }
-
-        for ball in balls.iter_mut() {
-            let dirx = (ballplayer.xkord - ball.xkord).signum();
-            let diry = (ballplayer.ykord - ball.ykord).signum();
-            ball.xkord += ball.speed * dirx;
-            ball.ykord += ball.speed * diry;
-
-            draw_ball(&ball);
-            if (ball.xkord - ballplayer.xkord).abs() < ballplayer.radius / 2.0
-                && (ball.ykord - ballplayer.ykord).abs() < ballplayer.radius / 2.0
-            {
-                gameover = true;
-            }
-        }
-
-        draw_ball(&ballplayer);
-        next_frame().await
+fn window_conf() -> window::Conf {
+    window::Conf {
+        window_title: "Müllmann".to_owned(),
+        high_dpi: true,
+        window_height: 1000,
+        window_width: 1000,
+        ..Default::default()
     }
 }
 
-fn draw_ball(ball: &Ball) {
-    draw_circle(ball.xkord, ball.ykord, ball.radius, ball.color);
+#[macroquad::main(window_conf)]
+async fn main() {
+    const GRID_SIZE: f32 = 1000 / GRID_CELLS;
+    let mut player = Bewohner {
+        x: screen_width() as i16 / 2,
+        y: screen_height() as i16 / 2,
+        size: 10,
+        speed: GRID_SIZE,
+    };
+
+    let mut muells: Vec<Muell> = Vec::new();
+
+    loop {
+        clear_background(BLUE);
+
+        muells.push(Muell {
+            x: 30,
+            y: 30,
+            size: 10,
+            shown: true,
+        });
+
+        if is_key_down(KeyCode::Right) && !(player.x + 2 * player.size > screen_width() as i16) {
+            player.x += player.speed;
+        } else if is_key_down(KeyCode::Left) && !(player.x - player.size < 0) {
+            player.x -= player.speed;
+        } else if is_key_down(KeyCode::Up) && !(player.y - player.size < 0) {
+            player.y -= player.speed;
+        } else if is_key_down(KeyCode::Down)
+            && !(player.y + 2 * player.size > screen_height() as i16)
+        {
+            player.y += player.speed;
+        }
+
+        draw_rectangle(
+            player.x.into(),
+            player.y.into(),
+            player.size.into(),
+            player.size.into(),
+            BLACK,
+        );
+        for m in muells.iter() {
+            if m.shown {
+                draw_rectangle(m.x.into(), m.y.into(), m.size.into(), m.size.into(), RED)
+            }
+        }
+
+        next_frame().await
+    }
 }
