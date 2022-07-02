@@ -76,6 +76,8 @@ fn window_conf() -> window::Conf {
 async fn main() {
     rand::srand(macroquad::miniquad::date::now() as _);
 
+    let player_stats_text: String = "Müllstand: ".to_owned();
+
     let mut player = Bewohner::new((3, 3), 1.);
     let mut muells: Vec<Muell> = Vec::new();
     let mut last_spawn_update = get_time();
@@ -99,14 +101,11 @@ async fn main() {
 
             if is_key_down(KeyCode::Right) && !(player.koord.0 + 2 > GRID_CELLS) {
                 player.koord.0 += 1;
-            }
-            if is_key_down(KeyCode::Left) && !(player.koord.0 < 1) {
+            } else if is_key_down(KeyCode::Left) && !(player.koord.0 < 1) {
                 player.koord.0 -= 1;
-            }
-            if is_key_down(KeyCode::Up) && !(player.koord.1 < 1) {
+            } else if is_key_down(KeyCode::Up) && !(player.koord.1 < 1) {
                 player.koord.1 -= 1;
-            }
-            if is_key_down(KeyCode::Down) && !(player.koord.1 + 2 > GRID_CELLS) {
+            } else if is_key_down(KeyCode::Down) && !(player.koord.1 + 2 > GRID_CELLS) {
                 player.koord.1 += 1;
             }
             if is_key_down(KeyCode::A) && !player.muells.is_empty() {
@@ -136,15 +135,23 @@ async fn main() {
         let offset_y = (screen_height() - game_size) / 2.;
         let sq_size = (screen_height() - offset_y * 2.) / GRID_CELLS as f32;
 
-        draw_grid(offset_x, offset_y, sq_size);
+        draw_grid_game(offset_x, offset_y, sq_size);
         draw_muells(offset_x, offset_y, sq_size, &muells);
         draw_player(offset_x, offset_y, sq_size, &player);
+
+        draw_text(
+            &(player_stats_text.clone() + &player.muells.len().to_string()),
+            64.,
+            64.,
+            64.,
+            BLACK,
+        );
 
         next_frame().await
     }
 }
 
-fn draw_grid(offset_x: f32, offset_y: f32, sq_size: f32) {
+fn draw_grid_game(offset_x: f32, offset_y: f32, sq_size: f32) {
     for i in 1..GRID_CELLS {
         draw_line(
             offset_x,
