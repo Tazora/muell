@@ -40,7 +40,6 @@ impl Collect for Muell {
 
     fn drop(mut self, koord: Point) -> Self {
         self.koord = koord;
-        self.koord.1 += 1;
         self.shown = Visibility::Show;
         self
     }
@@ -108,7 +107,7 @@ async fn main() {
             } else if is_key_down(KeyCode::Down) && !(player.koord.1 + 2 > GRID_CELLS) {
                 player.koord.1 += 1;
             }
-            if is_key_down(KeyCode::A) && !player.muells.is_empty() {
+            if is_key_down(KeyCode::S) && !player.muells.is_empty() {
                 let muell = player.muells.pop();
                 match muell {
                     Some(muell) => {
@@ -118,16 +117,17 @@ async fn main() {
                     None => break,
                 }
             }
-
-            muells.retain_mut(|m| {
-                if m.koord == player.koord {
-                    player.muells.push(m.take());
-                    player.speed += 0.1;
-                    false
-                } else {
-                    true
-                }
-            });
+            if is_key_down(KeyCode::A) && is_on_muell(&muells, &player) {
+                muells.retain_mut(|m| {
+                    if m.koord == player.koord {
+                        player.muells.push(m.take());
+                        player.speed += 0.1;
+                        false
+                    } else {
+                        true
+                    }
+                });
+            }
         }
 
         let game_size = screen_width().min(screen_height());
@@ -148,6 +148,15 @@ async fn main() {
         );
 
         next_frame().await
+    }
+}
+
+fn is_on_muell(muells: &Vec<Muell>, b: &Bewohner) -> bool {
+    let collided_muells: Vec<&Muell> = muells.iter().filter(|&m| m.koord == b.koord).collect();
+    if collided_muells.len() > 0 {
+        true
+    } else {
+        false
     }
 }
 
